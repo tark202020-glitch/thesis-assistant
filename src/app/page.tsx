@@ -589,36 +589,77 @@ export default function Home() {
                     <p className="text-xs mt-1 opacity-60">새 대화를 시작하거나 바로 메시지를 보내보세요.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-border/50">
-                    {conversations.map((conv) => (
-                      <div
-                        key={conv.id}
-                        onClick={() => handleSelectConversation(conv)}
-                        className={`px-3 py-3 cursor-pointer transition-all group hover:bg-muted/50 ${
-                          activeConversationId === conv.id ? 'bg-violet-500/10 border-l-2 border-violet-500' : ''
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              💬 {conv.title}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                              {formatDate(conv.updated_at)}
-                              {conv.assistant_id && (
-                                <span className="ml-1.5 bg-sky-500/15 text-sky-400 px-1 py-0.5 rounded text-[9px]">
-                                  🎓 {assistants.find(a => a.id === conv.assistant_id)?.name || '교수님'}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
-                            className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:bg-red-500/10 px-2 py-1 rounded transition-all shrink-0"
-                          >🗑️</button>
+                  <div className="flex flex-col gap-4 p-2">
+                    {conversations.filter(c => !c.assistant_id).length > 0 && (
+                      <div>
+                        <div className="px-2 pb-1.5 text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                          <span>📖</span> 연구원 대화 기록
+                        </div>
+                        <div className="divide-y divide-border/50 border border-border/30 rounded-lg overflow-hidden bg-background shadow-sm">
+                          {conversations.filter(c => !c.assistant_id).map((conv) => (
+                            <div
+                              key={conv.id}
+                              onClick={() => handleSelectConversation(conv)}
+                              className={`px-3 py-3 cursor-pointer transition-all group hover:bg-muted/50 ${
+                                activeConversationId === conv.id ? 'bg-violet-500/10 border-l-2 border-violet-500' : ''
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    💬 {conv.title}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    {formatDate(conv.updated_at)}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
+                                  className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:bg-red-500/10 px-2 py-1 rounded transition-all shrink-0"
+                                >🗑️</button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
+                    )}
+
+                    {conversations.filter(c => c.assistant_id).length > 0 && (
+                      <div>
+                        <div className="px-2 pb-1.5 text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                          <span>🎓</span> 교수님 대화 기록
+                        </div>
+                        <div className="divide-y divide-border/50 border border-border/30 rounded-lg overflow-hidden bg-background shadow-sm">
+                          {conversations.filter(c => c.assistant_id).map((conv) => (
+                            <div
+                              key={conv.id}
+                              onClick={() => handleSelectConversation(conv)}
+                              className={`px-3 py-3 cursor-pointer transition-all group hover:bg-muted/50 ${
+                                activeConversationId === conv.id ? 'bg-sky-500/10 border-l-2 border-sky-500' : ''
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    💬 {conv.title}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    {formatDate(conv.updated_at)}
+                                    <span className="ml-1.5 bg-sky-500/15 text-sky-400 px-1 py-0.5 rounded text-[9px]">
+                                      {assistants.find(a => a.id === conv.assistant_id)?.name || '교수님'}
+                                    </span>
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
+                                  className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:bg-red-500/10 px-2 py-1 rounded transition-all shrink-0"
+                                >🗑️</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
