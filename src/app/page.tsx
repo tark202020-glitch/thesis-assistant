@@ -120,6 +120,7 @@ export default function Home() {
   const [loadingAssistants, setLoadingAssistants] = useState(false);
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingAssistantId, setEditingAssistantId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newSpecialty, setNewSpecialty] = useState('');
   const [newPersona, setNewPersona] = useState('');
@@ -398,23 +399,37 @@ export default function Home() {
     finally { setLoadingAssistantDocs(false); }
   }, []);
 
-  const handleCreateAssistant = async () => {
+  const handleSaveAssistant = async () => {
     if (!newName || !newSpecialty) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/assistants', {
-        method: 'POST',
+      const url = '/api/assistants';
+      const method = editingAssistantId ? 'PUT' : 'POST';
+      const bodyParams: any = { name: newName, specialty: newSpecialty, persona: newPersona || null };
+      if (editingAssistantId) bodyParams.id = editingAssistantId;
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, specialty: newSpecialty, persona: newPersona || null }),
+        body: JSON.stringify(bodyParams),
       });
       const data = await res.json();
       if (data.success) {
         setNewName(''); setNewSpecialty(''); setNewPersona('');
         setShowCreateForm(false);
+        setEditingAssistantId(null);
         fetchAssistants();
-      } else { alert(`생성 실패: ${data.error}`); }
-    } catch (e) { alert('보조연구원 생성 중 오류 발생'); }
+      } else { alert(`저장 실패: ${data.error}`); }
+    } catch (e) { alert('보조연구원 저장 중 오류 발생'); }
     finally { setCreating(false); }
+  };
+  
+  const handleEditAssistantClick = (assistant: Assistant) => {
+    setEditingAssistantId(assistant.id);
+    setNewName(assistant.name);
+    setNewSpecialty(assistant.specialty || '');
+    setNewPersona(assistant.persona || '');
+    setShowCreateForm(true);
   };
 
   const handleDeleteAssistant = async (id: string, name: string) => {
@@ -726,15 +741,19 @@ export default function Home() {
             <div className="flex-1 flex flex-col overflow-hidden">
               {!showCreateForm && !selectedAssistant && (
                 <div className="p-3 border-b border-border">
-                  <button onClick={() => setShowCreateForm(true)}
+                  <button onClick={() => {
+                    setEditingAssistantId(null);
+                    setNewName(''); setNewSpecialty(''); setNewPersona('');
+                    setShowCreateForm(true);
+                  }}
                     className="w-full py-2.5 rounded-lg font-bold text-sm bg-gradient-to-r from-sky-600 to-cyan-600 text-white hover:from-sky-500 hover:to-cyan-500 hover:shadow-lg hover:shadow-sky-500/25 active:scale-[0.98] transition-all"
-                  >✨ 새 교수님 만들기</button>
+                  >✨ 새 교수님 등록</button>
                 </div>
               )}
 
               {showCreateForm && (
                 <div className="p-3 border-b border-border bg-background/50 space-y-2">
-                  <h3 className="text-sm font-bold text-foreground">🎓 교수님 생성</h3>
+                  <h3 className="text-sm font-bold text-foreground">{editingAssistantId ? '✏️ 교수님 정보 수정' : '🎓 교수님 생성'}</h3>
                   <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="이름 (예: 김교수님)" 
                     className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background focus:ring-2 focus:ring-sky-500 focus:outline-none" />
                   <input value={newSpecialty} onChange={(e) => setNewSpecialty(e.target.value)} placeholder="전문 분야 (예: 한국어 정보구조)" 
@@ -742,10 +761,10 @@ export default function Home() {
                   <textarea value={newPersona} onChange={(e) => setNewPersona(e.target.value)} placeholder="커스텀 페르소나 (선택사항)" rows={2}
                     className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background focus:ring-2 focus:ring-sky-500 focus:outline-none resize-none" />
                   <div className="flex gap-2">
-                    <button onClick={handleCreateAssistant} disabled={!newName || !newSpecialty || creating}
+                    <button onClick={handleSaveAssistant} disabled={!newName || !newSpecialty || creating}
                       className="flex-1 py-2 rounded-lg font-semibold text-sm bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-40 transition-all"
-                    >{creating ? '⏳ 생성 중...' : '생성'}</button>
-                    <button onClick={() => setShowCreateForm(false)} className="px-4 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted transition-colors">취소</button>
+                    >{creating ? '⏳ 저장 중...' : (editingAssistantId ? '수정 완료' : '생성')}</button>
+                    <button onClick={() => { setShowCreateForm(false); setEditingAssistantId(null); }} className="px-4 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted transition-colors">취소</button>
                   </div>
                 </div>
               )}
@@ -874,9 +893,14 @@ export default function Home() {
                               <p className="text-xs text-muted-foreground mt-0.5 truncate">📌 {a.specialty}</p>
                               {!a.data_store_id && <p className="text-[10px] text-yellow-500 mt-0.5">⚠ 데이터 스토어 미연결</p>}
                             </div>
-                            <button onClick={(e) => { e.stopPropagation(); handleDeleteAssistant(a.id, a.name); }}
-                              className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:bg-red-500/10 px-2 py-1 rounded transition-all shrink-0"
-                            >🗑️</button>
+                            <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-all">
+                              <button onClick={(e) => { e.stopPropagation(); handleEditAssistantClick(a); }}
+                                className="text-xs text-sky-400 hover:bg-sky-500/10 px-2 py-1 rounded transition-all"
+                              >✏️</button>
+                              <button onClick={(e) => { e.stopPropagation(); handleDeleteAssistant(a.id, a.name); }}
+                                className="text-xs text-red-400 hover:bg-red-500/10 px-2 py-1 rounded transition-all"
+                              >🗑️</button>
+                            </div>
                           </div>
                         </div>
                       ))}

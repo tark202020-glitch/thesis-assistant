@@ -90,6 +90,41 @@ export async function POST(req: Request) {
   }
 }
 
+// PUT: 보조연구원 정보 수정
+export async function PUT(req: Request) {
+  try {
+    const { id, name, specialty, persona } = await req.json();
+
+    if (!id || !name || !specialty) {
+      return NextResponse.json({ error: 'ID, 이름, 전문 분야는 필수입니다.' }, { status: 400 });
+    }
+
+    const { data: assistant, error: updateError } = await supabase
+      .from('assistants')
+      .update({
+        name,
+        specialty,
+        persona: persona || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('app_id', APP_ID)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json({
+      success: true,
+      assistant,
+      message: `보조연구원 "${name}" 수정 완료!`,
+    });
+  } catch (err: any) {
+    console.error('[Assistants Update Exception]', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 // DELETE: 보조연구원 삭제
 export async function DELETE(req: Request) {
   try {
