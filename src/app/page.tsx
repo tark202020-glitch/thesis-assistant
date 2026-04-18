@@ -64,6 +64,9 @@ export default function Home() {
   // ---- 대화 기록 ----
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const activeConvIdRef = useRef<string | null>(null);
+  useEffect(() => { activeConvIdRef.current = activeConversationId; }, [activeConversationId]);
+
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [dbMessageMap, setDbMessageMap] = useState<Map<string, string>>(new Map()); // chatMsgId → dbMsgId
@@ -71,10 +74,11 @@ export default function Home() {
   const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, setMessages } = useChat({
     body: { assistantId: activeAssistantId },
     onFinish: async (message) => {
+      const currentConvId = activeConvIdRef.current;
       // assistant 응답 완료 후 DB에 저장
-      if (activeConversationId && message.content) {
+      if (currentConvId && message.content) {
         try {
-          const res = await fetch(`/api/conversations/${activeConversationId}/messages`, {
+          const res = await fetch(`/api/conversations/${currentConvId}/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ role: 'assistant', content: message.content }),
@@ -248,6 +252,7 @@ export default function Home() {
         if (data.success && data.conversation) {
           convId = data.conversation.id;
           setActiveConversationId(convId);
+          activeConvIdRef.current = convId; // 즉시 ref 업데이트
           fetchConversations();
         }
       } catch (err) {
