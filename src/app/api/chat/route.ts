@@ -131,25 +131,44 @@ async function listUploadedDocuments(assistantId?: string | null): Promise<{ ass
   const assistantFiles: string[] = [];
   const sharedFiles: string[] = [];
 
+  const pageSize = 1000;
+  
   if (assistantId) {
-    const { data } = await supabase
-      .from('documents')
-      .select('source_file')
-      .eq('assistant_id', assistantId)
-      .eq('app_id', APP_ID)
-      .order('source_file', { ascending: true });
-    if (data) assistantFiles.push(...[...new Set(data.map(d => d.source_file))]);
+    let page = 0;
+    while(true) {
+      const { data } = await supabase
+        .from('documents')
+        .select('source_file')
+        .eq('assistant_id', assistantId)
+        .eq('app_id', APP_ID)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+      
+      if (!data || data.length === 0) break;
+      assistantFiles.push(...[...new Set(data.map((d: any) => d.source_file))]);
+      if (data.length < pageSize) break;
+      page++;
+    }
   }
 
-  const { data: sharedData } = await supabase
-    .from('documents')
-    .select('source_file')
-    .is('assistant_id', null)
-    .eq('app_id', APP_ID)
-    .order('source_file', { ascending: true });
-  if (sharedData) sharedFiles.push(...[...new Set(sharedData.map(d => d.source_file))]);
+  let sharedPage = 0;
+  while(true) {
+    const { data: sharedData } = await supabase
+      .from('documents')
+      .select('source_file')
+      .is('assistant_id', null)
+      .eq('app_id', APP_ID)
+      .range(sharedPage * pageSize, (sharedPage + 1) * pageSize - 1);
+      
+    if (!sharedData || sharedData.length === 0) break;
+    sharedFiles.push(...[...new Set(sharedData.map((d: any) => d.source_file))]);
+    if (sharedData.length < pageSize) break;
+    sharedPage++;
+  }
 
-  return { assistantFiles, sharedFiles };
+  return { 
+    assistantFiles: [...new Set(assistantFiles)], 
+    sharedFiles: [...new Set(sharedFiles)] 
+  };
 }
 
 export async function POST(req: Request) {
