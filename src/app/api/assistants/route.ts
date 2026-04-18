@@ -105,7 +105,6 @@ export async function PUT(req: Request) {
         name,
         specialty,
         persona: persona || null,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', id)
       .eq('app_id', APP_ID)
