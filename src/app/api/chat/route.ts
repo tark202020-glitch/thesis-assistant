@@ -357,8 +357,9 @@ export async function POST(req: Request) {
       break;
     }
 
+    case 'review_draft':
     case 'analyze_paper': {
-      // 논문 분석: 전체 텍스트 복원
+      // 논문 분석 및 초안 평가: 전체 텍스트 복원
       let paperFullTexts: { name: string; text: string }[] = [];
       
       const paperPool = assistantId && assistantFiles.length > 0 ? assistantFiles : allFiles;
@@ -475,21 +476,7 @@ export async function POST(req: Request) {
       break;
     }
 
-    case 'review_draft':
-      systemPrompt = `${basePersona}
-      당신은 학술 글쓰기 전문 리뷰어입니다.
-      사용자가 제공한 논문 초안, 섹션, 아이디어를 분석하여 건설적인 피드백을 제공하세요.
-      
-      다음 관점에서 리뷰하세요:
-      1. **논리적 흐름**: 주장-근거-결론의 연결이 명확한지
-      2. **학술적 글쓰기**: 학술 논문에 적합한 문체와 용어를 사용하는지
-      3. **구조**: 섹션 구성이 체계적인지
-      4. **인용**: 적절한 인용이 포함되어 있는지, 빠진 인용은 없는지
-      5. **명확성**: 연구 질문, 가설, 방법론이 명확히 서술되었는지
-      6. **개선 제안**: 구체적이고 실행 가능한 수정 방안 제시
-      
-      피드백은 체계적이되 격려적인 톤으로, 개선 방향을 구체적으로 제시하세요.`;
-      break;
+
 
     case 'search': {
       const retrievedContext = await searchByVector(lastUserMessage, assistantId, 'all', 10);

@@ -755,7 +755,11 @@ export default function Home() {
                   <div className="p-3 border-b border-border bg-background/50">
                     <div className="flex items-center justify-between mb-2">
                       <button onClick={() => { setSelectedAssistant(null); setAssistantDocs([]); }} className="text-xs text-muted-foreground hover:text-foreground">← 목록으로</button>
-                      <button onClick={() => { setActiveAssistantId(selectedAssistant.id); }} 
+                      <button onClick={() => { 
+                          setActiveAssistantId(selectedAssistant.id); 
+                          setActiveConversationId(null); // 교수 활성화 시 기존 대화 연결을 끊음 -> 새 대화 생성 유도
+                          setMessages([]);
+                        }} 
                         className={`text-xs px-2 py-1 rounded-lg font-semibold transition-all ${
                           activeAssistantId === selectedAssistant.id 
                             ? 'bg-emerald-500/20 text-emerald-400' 
