@@ -101,9 +101,9 @@ export default function Home() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const assistantFileInputRef = useRef<HTMLInputElement>(null);
-
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('conversations');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [conversationFilter, setConversationFilter] = useState<'all' | 'shared' | 'assistant'>('all');
 
   // ---- 레벨1: 공유 학술자료 ----
   const [files, setFiles] = useState<File[]>([]);
@@ -577,8 +577,13 @@ export default function Home() {
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="p-3 border-b border-border">
                 <button onClick={handleNewConversation}
-                  className="w-full py-2.5 rounded-lg font-bold text-sm bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-500 hover:to-purple-500 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-lg font-bold text-sm bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-500 hover:to-purple-500 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-3"
                 >✨ 새 대화</button>
+                <div className="flex bg-muted rounded-lg p-1">
+                  <button onClick={() => setConversationFilter('all')} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-all ${conversationFilter === 'all' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>전체</button>
+                  <button onClick={() => setConversationFilter('shared')} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-all ${conversationFilter === 'shared' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>📖 연구원</button>
+                  <button onClick={() => setConversationFilter('assistant')} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-all ${conversationFilter === 'assistant' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>🎓 교수님</button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto">
                 {loadingConversations ? (
@@ -590,7 +595,7 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-4 p-2">
-                    {conversations.filter(c => !c.assistant_id).length > 0 && (
+                    {(conversationFilter === 'all' || conversationFilter === 'shared') && conversations.filter(c => !c.assistant_id).length > 0 && (
                       <div>
                         <div className="px-2 pb-1.5 text-xs font-bold text-muted-foreground flex items-center gap-1.5">
                           <span>📖</span> 연구원 대화 기록
@@ -624,7 +629,7 @@ export default function Home() {
                       </div>
                     )}
 
-                    {conversations.filter(c => c.assistant_id).length > 0 && (
+                    {(conversationFilter === 'all' || conversationFilter === 'assistant') && conversations.filter(c => c.assistant_id).length > 0 && (
                       <div>
                         <div className="px-2 pb-1.5 text-xs font-bold text-muted-foreground flex items-center gap-1.5">
                           <span>🎓</span> 교수님 대화 기록

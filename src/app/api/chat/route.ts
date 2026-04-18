@@ -196,8 +196,11 @@ export async function POST(req: Request) {
   const { assistantFiles, sharedFiles } = await listUploadedDocuments(assistantId);
   const allFiles = [...assistantFiles, ...sharedFiles];
   let fileListStr = '';
-  if (assistantId && assistantFiles.length > 0) {
-    fileListStr = assistantFiles.join(', ');
+  if (assistantId) {
+    fileListStr = `
+    [사용자 작성중 논문 (분석 대상/교수님 탭)]: ${assistantFiles.length > 0 ? assistantFiles.join(', ') : '없음'}
+    [공용 이론적 배경 자료 (연구원 탭)]: ${sharedFiles.length > 0 ? sharedFiles.join(', ') : '없음'}
+    `;
   } else {
     fileListStr = allFiles.length > 0 ? allFiles.join(', ') : '없음';
   }
@@ -266,10 +269,16 @@ export async function POST(req: Request) {
 
   let basePersona = '';
   if (assistantInfo) {
-    basePersona = `당신은 "${assistantName}"이라는 전문 보조연구원입니다.
+    basePersona = `당신은 "${assistantName}"이라는 전문 지도 교수님(보조연구원)입니다.
     전문 분야: ${assistantSpecialty}
     ${assistantPersona ? `페르소나: ${assistantPersona}` : ''}
-    사용자의 질문에 당신의 전문 분야에 맞는 깊이 있는 학술적 답변을 제공해주세요.
+    
+    [중요 역할 지침 - 필수 준수]
+    1. 당신에게 단독 배정된 자료(교수님 탭)는 "사용자가 직접 작성 중인 논문 또는 초안"입니다.
+    2. 당신은 공용 연구원 자료를 이론적 배경과 선행 연구로 자유롭게 참조합니다.
+    3. 당신의 주된 목표는 공용 지식을 바탕으로 사용자가 작성 중인 논문을 날카롭게 검토하고, 학술적 완성도를 높이도록 지도/첨삭하는 것입니다.
+    
+    사용자의 질문에 당신의 전문 분야에 맞는 깊이 있는 피드백을 제공해주세요.
     ${markdownInstruction}`;
   } else {
     basePersona = `당신은 논문 작성과 학술 연구를 돕는 'Thesis Assistant' 보조연구원입니다.
@@ -365,12 +374,17 @@ export async function POST(req: Request) {
         
         console.log(`[Analyze Paper] 전체 논문 ${paperFullTexts.length}개 로드 (총 ${allPaperText.length}자)`);
 
+        let sharedVectorContext = '';
+        if (assistantId && sharedFiles.length > 0) {
+          sharedVectorContext = await searchByVector(lastUserMessage, null, null, 15);
+        }
+
         systemPrompt = `${basePersona}
-        당신은 학술 논문 분석 전문가입니다.
-        사용자가 요청한 논문 분석을 수행하세요.
+        당신은 학술 논문 분석/지도 전문가입니다.
+        사용자가 요청한 논문 검토 및 분석을 수행하세요.
         
-        중요: 아래에 논문의 **전체 텍스트**가 제공됩니다.
-        처음부터 끝까지 꼼꼼히 읽고, 사용자의 질문에 맞는 정확한 분석을 제공하세요.
+        ${assistantId ? '중요: 아래에 **사용자가 작성 중인 논문 초안의 전체 텍스트**가 제공됩니다.' : '중요: 아래에 논문의 **전체 텍스트**가 제공됩니다.'}
+        처음부터 끝까지 꼼꼼히 읽고, 사용자의 질문에 맞는 정확한 피드백과 분석을 제공하세요.
         
         분석 시 다음 관점들을 고려하세요:
         - 논문 구조 (서론/문헌리뷰/방법론/결과/논의/결론)
@@ -381,8 +395,10 @@ export async function POST(req: Request) {
         - 연구의 기여점 및 한계점
         - 인용 및 참고문헌의 적절성
         
-        [전체 논문]
-        ${allPaperText}`;
+        ${assistantId ? '[사용자 작성 중인 논문/초안 전문]' : '[전체 논문]'}
+        ${allPaperText}
+        
+        ${sharedVectorContext ? `\n\n[참고용 이론/선행연구 - 공용 연구원 자료 기반 검색 결과 (이 내용을 토대로 초안을 평가/보강하세요)]\n${sharedVectorContext}` : ''}`;
       } else {
         const paperContext = await searchByVector(lastUserMessage, assistantId, 'script', 20);
         systemPrompt = `${basePersona}
