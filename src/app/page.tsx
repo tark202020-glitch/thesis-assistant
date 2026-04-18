@@ -4,6 +4,8 @@ import { useChat } from 'ai/react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { logout } from './login/actions';
+import { createClient } from '@/utils/supabase/client';
 
 // ===================== TYPES =====================
 interface LearnedDocument {
@@ -48,6 +50,15 @@ type SidebarTab = 'conversations' | 'shared' | 'assistants';
 
 // ===================== MAIN =====================
 export default function Home() {
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserEmail(user.email ?? '연구자');
+    });
+  }, [supabase]);
+
   const [activeAssistantId, setActiveAssistantId] = useState<string | null>(null);
 
   // ---- 대화 기록 ----
@@ -847,6 +858,18 @@ export default function Home() {
               <p className="text-xs text-muted-foreground mt-0.5">기본 모드 · 공유 논문자료 기반</p>
             )}
           </div>
+
+          {userEmail && (
+            <div className="flex items-center gap-3 border-l border-border pl-4 ml-2">
+              <span className="text-sm font-medium text-foreground">🧑‍🎓 {userEmail}</span>
+              <button 
+                onClick={() => logout()} 
+                className="text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20"
+              >
+                로그아웃
+              </button>
+            </div>
+          )}
         </header>
 
         <section className="flex-1 overflow-y-auto py-4 px-6 space-y-6">

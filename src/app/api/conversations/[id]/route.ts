@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+import { createClient } from '@/utils/supabase/server';
 
 const APP_ID = process.env.APP_ID || 'thesis_assistant';
 
@@ -14,6 +9,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { id } = await params;
     const { title } = await req.json();
 
@@ -26,6 +25,7 @@ export async function PATCH(
       .update({ title, updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('app_id', APP_ID)
+      .eq('user_id', user.id)
       .select()
       .single();
 
