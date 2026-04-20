@@ -999,7 +999,77 @@ export default function Home() {
           <div ref={messagesEndRef} />
         </section>
 
-        <form onSubmit={handleChatSubmit} className="px-6 py-4 border-t border-border flex gap-2">
+        {/* == 모드 토글 (연구원 / 교수님) == */}
+        <div className="px-6 pt-3 pb-1 border-t border-border flex items-center gap-4 relative">
+          <div className="flex bg-muted/50 p-1 rounded-full border border-border/50 shadow-sm transition-all hover:shadow-md mx-auto">
+            <button 
+              type="button" 
+              onClick={() => {
+                if (activeAssistantId !== null) {
+                  setActiveAssistantId(null);
+                  setActiveConversationId(null);
+                  setMessages([]);
+                }
+              }} 
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-full transition-all ${
+                !activeAssistantId 
+                  ? 'bg-background text-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span className={!activeAssistantId ? 'scale-110 transition-transform' : ''}>📖</span>
+              연구원 모드
+            </button>
+            
+            <div className={`relative flex items-center transition-all ${activeAssistantId !== null ? 'bg-background shadow-sm rounded-full pr-2' : ''}`}>
+              <button 
+                type="button" 
+                onClick={() => {
+                  if (activeAssistantId === null) {
+                    if (assistants.length === 0) {
+                      setSidebarOpen(true);
+                      setSidebarTab('assistants');
+                    } else {
+                      setActiveAssistantId(assistants[0].id);
+                      setActiveConversationId(null);
+                      setMessages([]);
+                    }
+                  }
+                }} 
+                className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-full transition-all ${
+                  activeAssistantId !== null 
+                    ? 'text-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span className={activeAssistantId !== null ? 'scale-110 transition-transform' : ''}>🎓</span>
+                {activeAssistantId !== null && activeAssistant ? `${activeAssistant.name} 모드` : '교수님 모드'}
+              </button>
+
+              {activeAssistantId !== null && assistants.length > 1 && (
+                <div className="relative pl-1">
+                  <select 
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                    title="교수님 변경"
+                    value={activeAssistantId || ''}
+                    onChange={(e) => {
+                      setActiveAssistantId(e.target.value);
+                      setActiveConversationId(null);
+                      setMessages([]);
+                    }}
+                  >
+                    {assistants.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                  <span className="text-[10px] text-muted-foreground px-1.5 py-1 bg-muted/40 rounded-md cursor-pointer hover:bg-muted/80 transition-colors flex items-center justify-center">변경 ▼</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleChatSubmit} className="px-6 pb-4 pt-2 flex gap-2">
           <input
             className="flex-1 border border-border rounded-full px-6 py-4 bg-background focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
             value={input}
